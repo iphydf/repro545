@@ -1,34 +1,23 @@
 language: cpp
 compiler: clang
-dist: trusty
-sudo: required
 
-addons:
-  apt:
-    sources:
-    - hvr-ghc
-    packages:
-    - ghc-8.0.1
-    - realpath
+cache:
+  directories:
+    - $HOME/.cache/bazel
 
 before_install:
-- rm -rf $HOME/.cache/bazel/_bazel_$USER/install
-- wget https://github.com/bazelbuild/bazel/releases/download/0.9.0/bazel-0.9.0-without-jdk-installer-linux-x86_64.sh
-- sha256sum -c tools/bazel-0.9.0-without-jdk-installer-linux-x86_64.sh.sha256
-- chmod +x bazel-0.9.0-without-jdk-installer-linux-x86_64.sh
-- ./bazel-0.9.0-without-jdk-installer-linux-x86_64.sh --user
-- export PATH=$HOME/bin:$PATH
+  - wget https://github.com/bazelbuild/bazel/releases/download/0.21.0/bazel-0.21.0-installer-linux-x86_64.sh
+  - sha256sum -c tools/bazel-0.21.0-installer-linux-x86_64.sh.sha256
+  - chmod +x bazel-0.21.0-installer-linux-x86_64.sh
+  - ./bazel-0.21.0-installer-linux-x86_64.sh --user
+  - export PATH=$HOME/bin:$PATH
 
-install:
-- echo 'build --jobs=4 --curses=no --verbose_failures' >> $HOME/.bazelrc
-- echo "import %workspace%/tools/bazelrc/linux-$CC" >> $HOME/.bazelrc
-- sudo ln -s $(which as) /opt/ghc/8.0.1/bin/as
-- sudo ln -s $(which dirname) /opt/ghc/8.0.1/bin/dirname
-- sudo ln -s $(which gcc) /opt/ghc/8.0.1/bin/gcc
-- sudo ln -s $(which ld) /opt/ghc/8.0.1/bin/ld
-- sudo ln -s $(which realpath) /opt/ghc/8.0.1/bin/realpath
+install: echo 'build --jobs=4 --curses=no --verbose_failures' >> $HOME/.bazelrc
 
-script: bazel build @haskell_dlist//:test
+script:
+  - bazel build @haskell_clock//:clock
+
+before_cache: rm -rf $HOME/.cache/bazel/_bazel_$USER/install
 
 git:
   depth: 1

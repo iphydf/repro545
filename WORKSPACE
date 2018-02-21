@@ -1,51 +1,68 @@
-workspace(name = "repro140")
+workspace(name = "toktok")
+
+load("//tools/workspace:github.bzl", "github_archive")
+
+github_archive(
+    name = "io_bazel_skydoc",
+    repo = "bazelbuild/skydoc",
+    sha256 = "2885adbe581576b2b3ec906eeebc3692e45386651502411284c50979add0fa89",
+    version = "0.1.4",
+)
+
+load("@io_bazel_skydoc//skylark:skylark.bzl", "skydoc_repositories")
+
+skydoc_repositories()
 
 # Haskell
 # =========================================================
 
-RULES_HASKELL_COMMIT = "485efdec6f30cdbbcc1631071e0bc39fa0721496"
+RULES_HASKELL_COMMIT = "110721c4434c842a683a0c6f38d9e59327b04b44"
 
-http_archive(
+github_archive(
     name = "io_tweag_rules_haskell",
-    sha256 = "b3cc7b890f63bf6cc1de29e810181eac863a5259d4823ce40ccf1a279007bbfa",
-    strip_prefix = "rules_haskell-%s" % RULES_HASKELL_COMMIT,
-    urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_COMMIT],
+    repo = "tweag/rules_haskell",
+    sha256 = "9aff2dfeb78c67ebf8fedf5ff08d702f6a6bcb307c590630904e35500c095a31",
+    version = "e758cba13e40124e5ff11a4dbc889900278cf64e",
 )
 
 load("@io_tweag_rules_haskell//haskell:repositories.bzl", "haskell_repositories")
-load("//third_party/haskell:haskell.bzl", "new_cabal_package")
 
 haskell_repositories()
 
+load("@io_tweag_rules_haskell//haskell:ghc_bindist.bzl", "ghc_bindist")
+load("//third_party/haskell:haskell.bzl", "new_cabal_package")
+
+# This repository rule creates @ghc repository.
+ghc_bindist(
+    name = "ghc",
+)
+
 register_toolchains("//:ghc")
 
-new_local_repository(
-    name = "ghc",
-    build_file = "third_party/BUILD.ghc",
-    path = "/opt/ghc/8.0.1",  # Change path accordingly.
+github_archive(
+    name = "ai_formation_hazel",
+    repo = "FormationAI/hazel",
+    sha256 = "3063c822c637f377016afc4a9bc4f263c81a32563a4e1bed539ef2bb493a2183",
+    version = "5f8f808402dcdc6570592d2f4c88c94e34a7e7a5",
 )
 
-new_cabal_package(
-    package = "QuickCheck-2.11.3",
-    sha256 = "488c5652139da0bac8b3e7d76f11320ded298549e62db530938bfee9ca981876",
-)
+load("//third_party/haskell:packages.bzl", "core_packages", "packages")
 
-new_cabal_package(
-    package = "dlist-0.8.0.4",
-    sha256 = "acf1867b80cdd618b8d904e89eea33be60d3c4c3aeb80d61f29229a301cc397a",
-)
+#hazel_repositories(
+#    core_packages = core_packages,
+#    packages = packages,
+#)
 
-new_cabal_package(
-    package = "primitive-0.6.2.0",
-    sha256 = "b8e8d70213e22b3fab0e0d11525c02627489618988fdc636052ca0adce282ae1",
-)
+[new_local_repository(
+    name = "haskell_%s" % pkg.replace("-", "_"),
+    build_file = "third_party/haskell/BUILD.bazel",
+    path = "/usr",
+) for pkg in core_packages.keys()]
 
-new_cabal_package(
-    package = "random-1.1",
-    sha256 = "b718a41057e25a3a71df693ab0fe2263d492e759679b3c2fea6ea33b171d3a5a",
-)
-
-new_cabal_package(
-    package = "tf-random-0.5",
-    sha256 = "2e30cec027b313c9e1794d326635d8fc5f79b6bf6e7580ab4b00186dadc88510",
-)
+[new_cabal_package(
+    package = "%s-%s" % (
+        pkg,
+        data.version,
+    ),
+    sha256 = data.sha256,
+) for pkg, data in packages.items()]
